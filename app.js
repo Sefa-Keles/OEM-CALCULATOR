@@ -1,7 +1,48 @@
 // STORAGE CONTROLLER (IMMEDIATE FUNCTION)
 const StorageController = (function(){
 
+    return {
+        storeProduct: function(prd) {
+            let products;
+            if(localStorage.getItem("products") === null){
+                products = [];
+                products.push(prd);
+            }else{
+                products = JSON.parse(localStorage.getItem("products"));
+                products.push(prd);
+            }
+            localStorage.setItem("products", JSON.stringify(products));
+        },
+        getProductFromLS: function() {
+            let products;
+            if(localStorage.getItem("products") === null){
+                products = [];
+            }else{
+                products = JSON.parse(localStorage.getItem("products"))
+            }
+            return products;
+        },
+        updateLocalStorage: function(updatedProduct){
+            let products = JSON.parse(localStorage.getItem("products"));
 
+            products.forEach(function(prd,index){
+                if(prd.id === updatedProduct.id){
+                    products.splice(index,1,updatedProduct);
+                }
+                localStorage.setItem("products", JSON.stringify(products));
+            })
+        },
+        deleteProducFromLS: function(id){
+            let products = JSON.parse(localStorage.getItem("products"));
+
+            products.forEach(function(prd,index){
+                if(prd.id === id){
+                    products.splice(index,1);
+                }
+                localStorage.setItem("products", JSON.stringify(products));
+            })
+        }
+    }
 
 })();
 
@@ -20,19 +61,9 @@ const ProductController = (function(){
         }
     }
 
-    //DUMMY DATA Database
+    //Database
     const data = {
-        products: [
-            // {
-            //     id: 1, name: "Dell Monitor", price: 170
-            // },
-            // {
-            //     id: 2, name: "Philips Monitor", price: 110
-            // },
-            // {
-            //     id: 3, name: "MSI Monitor", price: 100
-            // }
-        ],
+        products: StorageController.getProductFromLS(),
         selectedProduct: null,
         totalPrice: 0
     }
@@ -157,7 +188,7 @@ const UiController = (function(){
             return selectors;
         },
         //Add Product To List
-        addProductToList: function(prd){
+        addProductToUI: function(prd){
 
             document.querySelector(selectors.productCard).style.display = "block";
 
@@ -242,7 +273,7 @@ const UiController = (function(){
 
 
 // APP CONTROLLER (IMMEDIATE FUNCTION)
-const AppController = (function(productController, uiController){
+const AppController = (function(productController, uiController, localStorageController){
     
     const selectors = uiController.getSelectors();
 
@@ -278,7 +309,10 @@ const AppController = (function(productController, uiController){
             const newProduct = productController.addProduct(productName, parseFloat(productPrice));
             
             //Add Product To UI List
-            uiController.addProductToList(newProduct);
+            uiController.addProductToUI(newProduct);
+
+            //Add Product To Local Storage
+            localStorageController.storeProduct(newProduct);
 
             //Get Total Price
             const total = productController.getTotalPrice();
@@ -335,6 +369,9 @@ const AppController = (function(productController, uiController){
             //Show Total Price in UI
             uiController.showTotalPrice(total);
 
+            //Update Local Storage
+            localStorageController.updateLocalStorage(updatedProduct);
+
             uiController.addingState();
         }
 
@@ -368,6 +405,9 @@ const AppController = (function(productController, uiController){
         //Show Total Price in UI
         uiController.showTotalPrice(total);
 
+        //Delete Product From Local Storage
+        localStorageController.deleteProducFromLS(selectedProduct.id);
+
         uiController.addingState();
 
         if(total == 0){
@@ -390,6 +430,11 @@ const AppController = (function(productController, uiController){
                 uiController.createProductList(products);
             }
 
+            //Get Total Price
+            const total = productController.getTotalPrice();
+
+            //Show Total Price in UI
+            uiController.showTotalPrice(total);
 
 
             //Load Event Listener
@@ -397,6 +442,6 @@ const AppController = (function(productController, uiController){
         }
     }
 
-})(ProductController, UiController);
+})(ProductController, UiController, StorageController);
 
 AppController.init();
